@@ -1,4 +1,4 @@
-# /bin/python3
+#! /bin/python3
 import std_msgs.msg as std_msgs
 import sensor_msgs.msg as sensor_msgs
 import rospy
