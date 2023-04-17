@@ -13,6 +13,10 @@
             output="screen">
             <param name="plot_vector" value="true" type="bool" />
         </node>
+        <node pkg="tunnel_traversal" type="obstacle_detection_node.py"
+            name="obstacle_detection_node"
+            output="screen">
+        </node>
         <node pkg="heading_control" type="obstacle_avoidance.py" name="obstacle_avoidance">
             <remap from="/followed_gallery" to="angle_to_advance" />
             <remap from="/corrected_angle" to="corrected_angle" />
