@@ -27,6 +27,7 @@ class ObstacleDetectionNode:
             if angle_min <= angle <= angle_max:
                 if ranges[i] < threshold:
                     self.obstacle_pub.publish(std_msgs.Bool(True))
+                    return
             angle += angle_increment
         self.obstacle_pub.publish(std_msgs.Bool(False))
 
