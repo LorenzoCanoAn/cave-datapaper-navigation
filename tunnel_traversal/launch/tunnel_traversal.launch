@@ -1,10 +1,24 @@
 <launch>
     <include file="$(find pointcloud_to_image)/launch/ptcl_to_img.launch">
     </include>
-    <node pkg="tunnel_traversal" type="tunnel_traversal_navigation.py" name="tunnel_traversal_node"
-        output="screen">
-        <param name="toggle_topic" value="/toggle_navigation" type="str" />
-        <param name="image_topic" value="/lidar_image" type="str" />
-        <param name="velocity_topic" value="/cmd_vel" type="str" />
-    </node>
+    <group ns="tunnel_traversal">
+        <node pkg="tunnel_traversal" type="tunnel_traversal_navigation.py"
+            name="tunnel_traversal_node"
+            output="screen">
+            <param name="toggle_topic" value="toggle_navigation" type="str" />
+            <param name="image_topic" value="/lidar_image" type="str" />
+            <param name="angle_topic" value="angle_to_advance" type="str" />
+        </node>
+        <node pkg="tunnel_traversal" type="plotter.py" name="tunnel_traversal_plotter"
+            output="screen">
+            <param name="plot_vector" value="true" type="bool" />
+        </node>
+        <node pkg="heading_control" type="obstacle_avoidance.py" name="obstacle_avoidance">
+            <remap from="/followed_gallery" to="angle_to_advance" />
+            <remap from="/corrected_angle" to="corrected_angle" />
+        </node>
+        <node pkg="heading_control" type="angle_to_vel.py" name="angle_to_vel">
+            <remap from="/corrected_angle" to="corrected_angle" />
+        </node>
+    </group>
 </launch>
