@@ -66,15 +66,13 @@ class TunnelTraversalNavigator:
         img.strides = (ptcl_msg.step, dtype.itemsize * channels, dtype.itemsize)
         img = np.array(img)
         # img[np.where(img == 0.0)] = 1
+        # To detect an obstacle, get the elements of the image in the middle
         conv_img = cv2.GaussianBlur(img, (15, 31), cv2.BORDER_WRAP)
         conv_vector = np.reshape((conv_img[7, :] + conv_img[8, :]) / 2, -1)
-        print(conv_vector.shape)
-        print(img.shape)
         if self._publish_vector:
             vector_msg = Float32MultiArray()
             vector_msg.data = conv_vector
             self._vector_publisher.publish(vector_msg)
-
         idxi = angle_deg_to_index(self._frontal_angles_range[0])
         idxj = angle_deg_to_index(self._frontal_angles_range[1])
         idxk = idxj + np.argmax(conv_vector[idxj:idxi])
@@ -89,7 +87,6 @@ class TunnelTraversalNavigator:
         ]
         avg_dist_right = np.average(distances_at_the_right)
         avg_dist_left = np.average(distances_at_the_left)
-        print(f"right{avg_dist_right} left: {avg_dist_left}")
         if avg_dist_left > avg_dist_right:
             angle_rad_to_advance += np.deg2rad(2)
         else:
@@ -98,6 +95,7 @@ class TunnelTraversalNavigator:
             self.angle_pub.publish(Float32(angle_rad_to_advance))
 
     def toggle_callback(self, msg: Bool):
+        print("Toggle callback recieved")
         self._publish_vel = msg.data
 
     def run(self):
