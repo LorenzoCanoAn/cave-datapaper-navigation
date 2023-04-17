@@ -15,7 +15,7 @@ class ObstacleDetectionNode:
         self.scan_sub = rospy.Subscriber(
             "/scan", sensor_msgs.LaserScan, callback=self.scan_callback
         )
-        self.obstacle_pub = rospy.Publisher("~obstacle_detected")
+        self.obstacle_pub = rospy.Publisher("~obstacle_detected", std_msgs.Bool)
 
     def scan_callback(self, msg: sensor_msgs.LaserScan):
         ranges = msg.ranges
