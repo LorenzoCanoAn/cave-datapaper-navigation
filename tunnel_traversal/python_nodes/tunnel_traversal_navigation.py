@@ -5,7 +5,7 @@ from geometry_msgs.msg import Twist
 from std_msgs.msg import String, Float32MultiArray, MultiArrayDimension, Float32
 import numpy as np
 import cv2
-from time import time_ns
+from time import time
 
 
 def warp_2pi_rad(angle_rad):
@@ -18,10 +18,6 @@ def warp_360_deg(angle_deg):
     while angle_deg < 0:
         angle_deg += 360
     return angle_deg % 360
-
-
-def time():
-    return time_ns() * 1e-9
 
 
 class TunnelTraversalNavigator:
