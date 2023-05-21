@@ -1,4 +1,5 @@
 <launch>
+    <arg name="launch_visualizer" default="0" />
     <include file="$(find pointcloud_to_image)/launch/ptcl_to_img.launch">
     </include>
     <group ns="tunnel_traversal">
@@ -9,10 +10,12 @@
             <param name="image_topic" value="/lidar_image" type="str" />
             <param name="angle_topic" value="angle_to_advance" type="str" />
         </node>
-        <node pkg="tunnel_traversal" type="plotter.py" name="tunnel_traversal_plotter"
-            output="screen">
-            <param name="plot_vector" value="true" type="bool" />
-        </node>
+        <group if="$(arg launch_visualizer)">
+            <node pkg="tunnel_traversal" type="plotter.py" name="tunnel_traversal_plotter"
+                output="screen">
+                <param name="plot_vector" value="true" type="bool" />
+            </node>
+        </group>
         <node pkg="tunnel_traversal" type="obstacle_detection_node.py"
             name="obstacle_detection_node"
             output="screen">
