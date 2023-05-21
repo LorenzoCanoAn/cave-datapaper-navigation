@@ -91,7 +91,7 @@ class TunnelTraversalNavigator:
 
     def toggle_callback(self, msg: Bool):
         print("Toggle callback recieved")
-        self._publish_vel = msg.data
+        self._publish_vel = not self._publish_vel
 
     def run(self):
         rospy.spin()
