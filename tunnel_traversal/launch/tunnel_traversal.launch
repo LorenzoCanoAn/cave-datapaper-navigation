@@ -9,6 +9,7 @@
             <param name="command_topic" value="command" type="str" />
             <param name="image_topic" value="/lidar_image" type="str" />
             <param name="angle_topic" value="angle_to_advance" type="str" />
+            <param name="time_limit" value="10" type="float" />
         </node>
         <group if="$(arg launch_visualizer)">
             <node pkg="tunnel_traversal" type="plotter.py" name="tunnel_traversal_plotter"
