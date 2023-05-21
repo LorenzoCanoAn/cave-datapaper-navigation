@@ -68,7 +68,6 @@ class TunnelTraversalNavigator:
         distances_at_the_left = img[8, :][range(80, 100)]
         min_dist_right = np.min(distances_at_the_right)
         min_dist_left = np.min(distances_at_the_left)
-        print(f"min_dist_left {min_dist_left}, min_dist_right {min_dist_right}")
         if (
             min_dist_left < self.min_dist_from_walls
             and min_dist_right > self.min_dist_from_walls

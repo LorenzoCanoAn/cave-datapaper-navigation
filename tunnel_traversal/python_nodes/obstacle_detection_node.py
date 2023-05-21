@@ -3,6 +3,7 @@ import std_msgs.msg as std_msgs
 import sensor_msgs.msg as sensor_msgs
 import rospy
 import numpy as np
+import matplotlib.pyplot as plt
 
 angle_max = np.deg2rad(40)
 threshold = 1
@@ -17,18 +18,20 @@ class ObstacleDetectionNode:
         self.obstacle_pub = rospy.Publisher(
             "obstacle_detected", std_msgs.Bool, queue_size=3
         )
+        self.width_of_obstacle_detection = 1
+        self.dist_to_obstacle = 1.5
 
     def scan_callback(self, msg: sensor_msgs.LaserScan):
-        ranges = msg.ranges
-        angle_increment = msg.angle_increment
-        angle = msg.angle_min
-        for i in range(len(ranges)):
-            if abs(angle) < angle_max:
-                if ranges[i] < threshold:
-                    self.obstacle_pub.publish(std_msgs.Bool(True))
-                    return
-            angle += angle_increment
-        self.obstacle_pub.publish(std_msgs.Bool(False))
+        ranges = np.array(msg.ranges)
+        angles = np.arange(msg.angle_min, msg.angle_max, msg.angle_increment)
+        x = ranges * np.cos(angles)
+        y = ranges * np.sin(angles)
+        to_keep = np.where(np.abs(y) < self.width_of_obstacle_detection / 2)
+        x = x[to_keep]
+        y = y[to_keep]
+        x = x[np.where(x > 0)]
+        obstacle_detected = np.any(x < self.dist_to_obstacle)
+        self.obstacle_pub.publish(std_msgs.Bool(obstacle_detected))
 
 
 def main():
