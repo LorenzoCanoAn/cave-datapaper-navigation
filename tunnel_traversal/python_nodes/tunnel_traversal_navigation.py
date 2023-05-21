@@ -7,31 +7,16 @@ import numpy as np
 import cv2
 
 
-def angle_rad_to_index(angle):
-    angle_deg = np.rad2deg(angle)
-    return angle_deg_to_index(angle)
+def warp_2pi_rad(angle_rad):
+    while angle_rad < 0:
+        angle_rad += 2 * np.pi
+    return angle_rad % (2 * np.pi)
 
 
-def angle_deg_to_index(angle):
-    angle = int(angle)
-    index = (-angle + 180) % 360
-    return index
-
-
-def index_to_angle_deg(index):
-    angle = (-index + 360) % 360
-    angle = (angle - 180) % 360
-    return angle
-
-
-def index_to_angle_rad(index):
-    return np.deg2rad(index_to_angle_deg(index))
-
-
-def warp_rad_angle_pi(angle):
-    if angle > np.pi:
-        return angle - 2 * np.pi
-    return angle
+def warp_360_deg(angle_deg):
+    while angle_deg < 0:
+        angle_deg += 360
+    return angle_deg % 360
 
 
 class TunnelTraversalNavigator:
@@ -55,7 +40,7 @@ class TunnelTraversalNavigator:
             self._vector_publisher = rospy.Publisher(
                 "internals/vector", Float32MultiArray, queue_size=2
             )
-        self._publish_vel = True
+        self._publish_vel = False
 
     def image_callback(self, ptcl_msg: Image):
         dtype = np.dtype(np.float32)
@@ -65,28 +50,24 @@ class TunnelTraversalNavigator:
         img = np.frombuffer(ptcl_msg.data, dtype=dtype).reshape(shape)
         img.strides = (ptcl_msg.step, dtype.itemsize * channels, dtype.itemsize)
         img = np.array(img)
-        # img[np.where(img == 0.0)] = 1
-        # To detect an obstacle, get the elements of the image in the middle
+        # Apply gaussian blurr to the whole image
         conv_img = cv2.GaussianBlur(img, (15, 31), cv2.BORDER_WRAP)
-        conv_vector = np.reshape((conv_img[7, :] + conv_img[8, :]) / 2, -1)
+        # Get the two middle rows and do the average of the two
+        vector_at_medium_height = np.reshape((conv_img[7, :] + conv_img[8, :]) / 2, -1)
         if self._publish_vector:
             vector_msg = Float32MultiArray()
-            vector_msg.data = conv_vector
+            vector_msg.data = vector_at_medium_height
             self._vector_publisher.publish(vector_msg)
-        idxi = angle_deg_to_index(self._frontal_angles_range[0])
-        idxj = angle_deg_to_index(self._frontal_angles_range[1])
-        idxk = idxj + np.argmax(conv_vector[idxj:idxi])
-        angle_rad_to_advance = warp_rad_angle_pi(index_to_angle_rad(idxk))
+        idxi = int(self._frontal_angles_range[0])
+        idxj = int(self._frontal_angles_range[1])
+        idxk = idxi + np.argmax(vector_at_medium_height[range(idxi, idxj)])
+        angle_rad_to_advance = np.deg2rad(float(idxk))
         # To correct the angle so that the robot is centered
-        vector_at_medium_height = img[7, :]
-        distances_at_the_right = vector_at_medium_height[
-            angle_deg_to_index(-80) : angle_deg_to_index(-100)
-        ]
-        distances_at_the_left = vector_at_medium_height[
-            angle_deg_to_index(100) : angle_deg_to_index(80)
-        ]
-        avg_dist_right = np.average(distances_at_the_right)
-        avg_dist_left = np.average(distances_at_the_left)
+        distances_at_the_right = vector_at_medium_height[range(-100, -80)]
+        distances_at_the_left = vector_at_medium_height[range(80, 100)]
+        avg_dist_right = np.mean(distances_at_the_right)
+        avg_dist_left = np.mean(distances_at_the_left)
+        print(f"left: {avg_dist_left}, right: {avg_dist_right}")
         if avg_dist_left > avg_dist_right:
             angle_rad_to_advance += np.deg2rad(2)
         else:
