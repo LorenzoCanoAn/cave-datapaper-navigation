@@ -2,9 +2,10 @@
 import rospy
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist
-from std_msgs.msg import Bool, Float32MultiArray, MultiArrayDimension, Float32
+from std_msgs.msg import String, Float32MultiArray, MultiArrayDimension, Float32
 import numpy as np
 import cv2
+from time import time_ns
 
 
 def warp_2pi_rad(angle_rad):
@@ -19,10 +20,16 @@ def warp_360_deg(angle_deg):
     return angle_deg % 360
 
 
+def time():
+    return time_ns() * 1e-9
+
+
 class TunnelTraversalNavigator:
     def __init__(self):
+        self.paused = True
+        self.time_elapsed = None
         rospy.init_node("tunnel_traversal_navigator")
-        toggle_topic = rospy.get_param("~toggle_topic")
+        command_topic = rospy.get_param("~command_topic")
         image_topic = rospy.get_param("~image_topic")
         angle_topic = rospy.get_param("~angle_topic")
         self.min_dist_from_walls = 2
@@ -30,8 +37,8 @@ class TunnelTraversalNavigator:
             "~frontal_angles_range_deg", (-40, 40)
         )
         self._publish_vector = rospy.get_param("~config/publish_vector", default=True)
-        self.toggle_subscriber = rospy.Subscriber(
-            toggle_topic, Bool, callback=self.toggle_callback
+        self.command_subscriber = rospy.Subscriber(
+            command_topic, String, callback=self.command_callback
         )
         self.ptcl_subscriber = rospy.Subscriber(
             image_topic, Image, callback=self.image_callback
@@ -41,7 +48,6 @@ class TunnelTraversalNavigator:
             self._vector_publisher = rospy.Publisher(
                 "internals/vector", Float32MultiArray, queue_size=2
             )
-        self._publish_vel = False
 
     def image_callback(self, ptcl_msg: Image):
         dtype = np.dtype(np.float32)
@@ -86,12 +92,33 @@ class TunnelTraversalNavigator:
                 angle_rad_to_advance += np.deg2rad(2)
             else:
                 angle_rad_to_advance -= np.deg2rad(2)
-        if self._publish_vel:
+        if self.paused:
+            pass
+        elif not self.time_elapsed is None:
             self.angle_pub.publish(Float32(angle_rad_to_advance))
+            self.time_elapsed += time() - self.prev_time
+            print(
+                f"Time left: {self.time_limit-self.time_elapsed:10.4f}",
+                end="\r",
+                flush=True,
+            )
+            if self.time_elapsed >= self.time_limit:
+                self.command_callback(String("stop"))
+        self.prev_time = time()
 
-    def toggle_callback(self, msg: Bool):
-        print("Toggle callback recieved")
-        self._publish_vel = not self._publish_vel
+    def command_callback(self, msg: String):
+        print(f"Command recieved: {msg}")
+        if msg.data.lower() == "start":
+            self.time_limit = rospy.get_param("~time_limit", default=20)
+            self.paused = False
+            self.time_elapsed = 0
+        elif msg.data.lower() == "stop":
+            self.paused = True
+            self.time_elapsed = None
+        elif msg.data.lower() == "pause":
+            self.paused = True
+        elif msg.data.lower() == "unpause":
+            self.paused = False
 
     def run(self):
         rospy.spin()

@@ -6,7 +6,7 @@
         <node pkg="tunnel_traversal" type="tunnel_traversal_navigation.py"
             name="tunnel_traversal_node"
             output="screen">
-            <param name="toggle_topic" value="toggle_navigation" type="str" />
+            <param name="command_topic" value="command" type="str" />
             <param name="image_topic" value="/lidar_image" type="str" />
             <param name="angle_topic" value="angle_to_advance" type="str" />
         </node>
