@@ -30,6 +30,7 @@ class PlotterNode:
         # Actors
         (self._vector_artist,) = self._ax1.plot([], lw=6, c="b")
         # Draw
+        self._ax1.set_ylim([0, 50])
         self._fig.canvas.draw()
         self._ax1background = self._fig.canvas.copy_from_bbox(self._ax1.bbox)
         plt.show(block=False)

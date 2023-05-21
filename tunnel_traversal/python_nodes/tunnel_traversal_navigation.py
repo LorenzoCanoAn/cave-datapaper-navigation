@@ -25,6 +25,7 @@ class TunnelTraversalNavigator:
         toggle_topic = rospy.get_param("~toggle_topic")
         image_topic = rospy.get_param("~image_topic")
         angle_topic = rospy.get_param("~angle_topic")
+        self.min_dist_from_walls = 2
         self._frontal_angles_range = rospy.get_param(
             "~frontal_angles_range_deg", (-40, 40)
         )
@@ -63,15 +64,29 @@ class TunnelTraversalNavigator:
         idxk = idxi + np.argmax(vector_at_medium_height[range(idxi, idxj)])
         angle_rad_to_advance = np.deg2rad(float(idxk))
         # To correct the angle so that the robot is centered
-        distances_at_the_right = vector_at_medium_height[range(-100, -80)]
-        distances_at_the_left = vector_at_medium_height[range(80, 100)]
-        avg_dist_right = np.mean(distances_at_the_right)
-        avg_dist_left = np.mean(distances_at_the_left)
-        print(f"left: {avg_dist_left}, right: {avg_dist_right}")
-        if avg_dist_left > avg_dist_right:
-            angle_rad_to_advance += np.deg2rad(2)
-        else:
+        distances_at_the_right = img[8, :][range(-100, -80)]
+        distances_at_the_left = img[8, :][range(80, 100)]
+        min_dist_right = np.min(distances_at_the_right)
+        min_dist_left = np.min(distances_at_the_left)
+        print(f"min_dist_left {min_dist_left}, min_dist_right {min_dist_right}")
+        if (
+            min_dist_left < self.min_dist_from_walls
+            and min_dist_right > self.min_dist_from_walls
+        ):
             angle_rad_to_advance -= np.deg2rad(2)
+        elif (
+            min_dist_left > self.min_dist_from_walls
+            and min_dist_right < self.min_dist_from_walls
+        ):
+            angle_rad_to_advance += np.deg2rad(2)
+        elif (
+            min_dist_left < self.min_dist_from_walls
+            and min_dist_right < self.min_dist_from_walls
+        ):
+            if min_dist_left < min_dist_right:
+                angle_rad_to_advance += np.deg2rad(2)
+            else:
+                angle_rad_to_advance -= np.deg2rad(2)
         if self._publish_vel:
             self.angle_pub.publish(Float32(angle_rad_to_advance))
 
