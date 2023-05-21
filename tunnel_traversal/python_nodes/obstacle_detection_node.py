@@ -23,7 +23,7 @@ class ObstacleDetectionNode:
 
     def scan_callback(self, msg: sensor_msgs.LaserScan):
         ranges = np.array(msg.ranges)
-        angles = np.arange(msg.angle_min, msg.angle_max, msg.angle_increment)
+        angles = np.linspace(msg.angle_min, msg.angle_max, len(ranges))
         x = ranges * np.cos(angles)
         y = ranges * np.sin(angles)
         to_keep = np.where(np.abs(y) < self.width_of_obstacle_detection / 2)
