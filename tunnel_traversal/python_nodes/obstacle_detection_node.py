@@ -27,6 +27,9 @@ class ObstacleDetectionNode:
         to_keep = np.where(ranges < 20)
         ranges = ranges[to_keep]
         angles = angles[to_keep]
+        to_keep = np.where(np.logical_not(np.isnan(ranges)))
+        ranges = ranges[to_keep]
+        angles = angles[to_keep]
         x = ranges * np.cos(angles)
         y = ranges * np.sin(angles)
         to_keep = np.where(np.abs(y) < self.width_of_obstacle_detection / 2)
