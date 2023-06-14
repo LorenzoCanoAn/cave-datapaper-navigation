@@ -1,0 +1,25 @@
+<launch>
+    <arg name="publish_yaw_also_in_deg" default="1" />
+    <!-- Launch the scan to img node-->
+    <include file="$(find pointcloud_to_image)/launch/scan_to_img.launch">
+    </include>
+    <!-- Launch all the tunnel traversal nodes in their own namespace-->
+    <group ns="tunnel_traversal">
+        <include file="$(find tunnel_yaw_prediction_ros)/launch/tunnel_yaw_prediction.launch">
+            <arg name="publish_also_in_deg" value="$(arg publish_yaw_also_in_deg)" />
+        </include>
+        <!--<node
+        pkg="tunnel_traversal" 
+        type="obstacle_detection_node.py"
+            name="obstacle_detection_node"
+            output="screen">
+        </node>
+        <node pkg="heading_control" type="obstacle_avoidance.py" name="obstacle_avoidance">
+            <remap from="/followed_gallery" to="angle_to_advance" />
+            <remap from="/corrected_angle" to="corrected_angle" />
+        </node>
+        <node pkg="heading_control" type="angle_to_vel.py" name="angle_to_vel">
+            <remap from="/corrected_angle" to="corrected_angle" />
+        </node>-->
+    </group>
+</launch>
