@@ -1,25 +1,33 @@
 <launch>
     <arg name="publish_yaw_also_in_deg" default="1" />
+    <arg name="debug_balloon" default="0" />
     <!-- Launch the scan to img node-->
     <include file="$(find pointcloud_to_image)/launch/scan_to_img.launch">
     </include>
+    <arg name="ns" value="tunnel_traversal" />
     <!-- Launch all the tunnel traversal nodes in their own namespace-->
-    <group ns="tunnel_traversal">
+    <group ns="$(arg ns)">
+        <arg name="yaw_detection_topic" value="/$(arg ns)/predicted_yaw" />
+        <arg name="corrected_yaw_topic" value="/$(arg ns)/corrected_yaw" />
         <include file="$(find tunnel_yaw_prediction_ros)/launch/tunnel_yaw_prediction.launch">
+            <arg name="model_name" value="TunnelYawPredictor-_bs128_ne128_lr0_000875.torch" />
+            <arg name="model_folder" value="$(env HOME)/models/yaw_estimation" />
+            <!-- <arg name="path_to_model" default="$(arg model_folder)/$(arg model_name)" />-->
+            <arg name="input_topic" value="" />
+            <arg name="output_topic" value="$(arg yaw_detection_topic)" />
+            <arg name="model_module" value="" />
+            <arg name="model_type" value="" />
             <arg name="publish_also_in_deg" value="$(arg publish_yaw_also_in_deg)" />
         </include>
-        <!--<node
-        pkg="tunnel_traversal" 
-        type="obstacle_detection_node.py"
-            name="obstacle_detection_node"
-            output="screen">
-        </node>
-        <node pkg="heading_control" type="obstacle_avoidance.py" name="obstacle_avoidance">
-            <remap from="/followed_gallery" to="angle_to_advance" />
-            <remap from="/corrected_angle" to="corrected_angle" />
-        </node>
-        <node pkg="heading_control" type="angle_to_vel.py" name="angle_to_vel">
-            <remap from="/corrected_angle" to="corrected_angle" />
-        </node>-->
+        <include file="$(find sliding_balloon_ros)/launch/sliding_balloon.launch">
+            <arg name="desired_direction_topic" value="$(arg yaw_detection_topic)" />
+            <arg name="scan_topic" value="/scan" />
+            <arg name="corrected_direction_topic" value="$(arg corrected_yaw_topic)" />
+            <arg name="advance_step" value="5" />
+            <arg name="differential" value="0.1" />
+            <arg name="frequency" value="" />
+            <arg name="processing_radius" value="" />
+            <arg name="debug" value="$(arg debug_balloon)" />
+        </include>
     </group>
 </launch>

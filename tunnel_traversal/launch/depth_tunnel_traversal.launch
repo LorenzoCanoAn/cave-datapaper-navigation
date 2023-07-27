@@ -3,7 +3,7 @@
     <include file="$(find pointcloud_to_image)/launch/ptcl_to_img.launch">
     </include>
     <group ns="tunnel_traversal">
-        <node pkg="tunnel_traversal" type="tunnel_traversal_navigation.py"
+        <node pkg="tunnel_traversal" type="depth_tunnel_traversal_navigation_node.py"
             name="tunnel_traversal_node"
             output="screen">
             <param name="command_topic" value="command" type="str" />
@@ -25,7 +25,7 @@
             <remap from="/followed_gallery" to="angle_to_advance" />
             <remap from="/corrected_angle" to="corrected_angle" />
         </node>
-        <node pkg="heading_control" type="angle_to_vel.py" name="angle_to_vel">
+        <node pkg="heading_control" type="angle_to_vel.py" name="angle_to_vel" output="screen">
             <remap from="/corrected_angle" to="corrected_angle" />
         </node>
     </group>

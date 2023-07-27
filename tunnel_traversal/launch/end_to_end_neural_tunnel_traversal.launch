@@ -1,0 +1,41 @@
+<launch>
+    <arg name="publish_yaw_also_in_deg" default="1" />
+    <arg name="debug_balloon" default="0" />
+    <arg name="ns" value="tunnel_traversal" />
+    <arg name="launch_angle_to_vel" default="true" />
+    <arg name="model_name" default="dir_to_axis_data_aug_larger_dataset_vld_2" />
+    <arg name="omit_obstacle_avoidance" default="false" />
+    <!-- Launch the scan to img node-->
+    <include file="$(find pointcloud_to_image)/launch/scan_to_bev_img.launch">
+        <arg name="input_topic" default="/scan" />
+        <arg name="output_topic" default="/cenital_image" />
+        <arg name="normalize" default="0" />
+        <arg name="void_value" default="0" />
+        <arg name="max_coord_val" value="10" />
+        <arg name="img_size" value="100" />
+    </include>
+    <!-- Launch all the tunnel traversal nodes in their own namespace-->
+    <group ns="$(arg ns)">
+        <arg name="bearing_prediction_topic" value="/predicted_bearing" />
+        <!-- Launch neural node-->
+        <include file="$(find tunnel_yaw_prediction_ros)/launch/dir_to_axis_prediction_node.launch">
+            <arg name="model_folder" value="$(env HOME)/models/fast_tunnel_traversal" />
+            <arg name="model_name" value="$(arg model_name)" />
+            <arg name="input_topic" value="/cenital_image" />
+            <arg name="output_topic" value="$(arg bearing_prediction_topic)" />
+            <arg name="publish_also_in_deg" value="true" />
+        </include>
+        <group if="$(arg launch_angle_to_vel)">
+            <node name="obstacle_avoidance" pkg="heading_control" type="obstacle_avoidance.py">
+                <param name="input_topic" value="$(arg bearing_prediction_topic)" />
+                <param name="output_topic" value="/corrected_bearing" />
+                <param name="passthrough" value="$(arg omit_obstacle_avoidance)" />
+            </node>
+            <node name="angle_to_vel" pkg="heading_control" type="angle_to_vel.py" output="screen">
+                <param name="input_topic" value="/corrected_bearing" />
+            </node>
+            <node name="obstacle_avoidance_plot" pkg="topological_navigation_plotting"
+                type="obstacle_avoidance_plot.py" />
+        </group>
+    </group>
+</launch>
